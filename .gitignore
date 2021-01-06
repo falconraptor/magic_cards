@@ -1,0 +1,4 @@
+.idea
+*.py[dc]
+__pycache__
+external/
