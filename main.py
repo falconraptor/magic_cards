@@ -21,9 +21,11 @@ def check_updates() -> tuple[bool, bool]:
         makedirs('external')
     printings = get_last_modified('external/AllPrintings.sqlite')
     prices = get_last_modified('external/AllPrices.json')
-    date = datetime.fromisoformat(requests.get('https://mtgjson.com/api/v5/Meta.json').json()['data']['date'])
-    printings = printings < date
-    prices = prices < date
+    meta = requests.get('https://mtgjson.com/api/v5/Meta.json').json()
+    printings_date = datetime.fromisoformat(meta['data']['date'])
+    prices_date = datetime.fromisoformat(meta['meta']['date'])
+    printings = printings < printings_date
+    prices = prices < prices_date
     if printings or prices:
         logging.info('Update found!')
     else:
@@ -37,7 +39,7 @@ def update_printings():
     try:
         response.raise_for_status()
         with open('external/AllPrintings.sqlite', 'wb') as output:
-            for chunk in response.iter_content():
+            for chunk in response.iter_content(chunk_size=8192 * 8):
                 output.write(chunk)
     except Exception as e:
         logging.error(f'Unable to download updated printings [{e.__repr__()}]')
@@ -49,7 +51,7 @@ def update_prices():
     try:
         response.raise_for_status()
         with open('external/AllPrices.json', 'wb') as output:
-            for chunk in response.iter_content():
+            for chunk in response.iter_content(chunk_size=8192 * 8):
                 output.write(chunk)
     except Exception as e:
         logging.error(f'Unable to download updated printings [{e.__repr__()}]')
